@@ -25,20 +25,11 @@ class IpActivity < ApplicationRecord
     where(user:).includes(:user, :trading_account, :ip_address_record)
                 .or(where(trading_account_login: user.trading_accounts.select(:login)))
   }
-  scope :recent_n_per_activity_type, lambda { |limit|
-    query = <<-SQL.squish
-      SELECT activity_limited.id
-      FROM (SELECT DISTINCT activity_type FROM ip_activities) activity_groups
-      JOIN LATERAL (
-        SELECT * FROM ip_activities activity_all
-        WHERE activity_all.activity_type = activity_groups.activity_type
-        ORDER BY activity_all.created_at DESC
-        LIMIT :limit
-      ) activity_limited ON true
-    SQL
 
-    where("ip_activities.id IN (#{ApplicationRecord.sanitize_sql([query, { limit: }])})")
-  }
+  scope :by_type, ->(type) { where(activity_type: type) }
+  scope :between_dates, ->(from_date, to_date) { where(created_at: from_date.beginning_of_day..to_date.end_of_day) }
+  scope :by_trading_account, ->(login) { where(trading_account_login: login) }
+  scope :by_user, ->(user) { where(user_id: user.id) }
 
   def resource
     trading_account || user

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_05_01_000004) do
+ActiveRecord::Schema[7.2].define(version: 2025_07_10_170549) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,11 @@ ActiveRecord::Schema[7.2].define(version: 2024_05_01_000004) do
     t.integer "activity_type", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["activity_type", "created_at"], name: "idx_ip_activities_type_created_at", order: { created_at: :desc }
+    t.index ["activity_type", "trading_account_login", "created_at"], name: "idx_ip_activities_type_login_created_at", order: { created_at: :desc }
+    t.index ["activity_type", "user_id", "created_at"], name: "idx_ip_activities_type_user_created_at", order: { created_at: :desc }
+    t.index ["trading_account_login", "created_at"], name: "idx_ip_activities_login_created_at", order: { created_at: :desc }
+    t.index ["user_id", "created_at"], name: "idx_ip_activities_user_created_at", order: { created_at: :desc }
     t.index ["user_id"], name: "index_ip_activities_on_user_id"
   end
 

@@ -103,3 +103,10 @@ bin/rspec
 ## Submission
 
 Please provide your optimized solution along with an explanation of your approach and any trade-offs you made.
+
+
+Points:
+
+1. I have optimized the seed file for better readability and performance. Additionally, I resolved N+1 query issues to improve database efficiency.
+2. Optimized queries and verified all endpoints are working correctly. Refactored business logic from models into dedicated service classes for cleaner,   maintainable code.
+3. present added for ip_activity_filter_service for better readability and maintainability.
