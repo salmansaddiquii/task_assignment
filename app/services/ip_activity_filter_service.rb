@@ -35,10 +35,15 @@ class IpActivityFilterService
     when 'login'
       scope.by_type('login').limit(1000)
     when 'trade'
-      scope.by_type('trade')
+      scope.by_type('trade').limit(1990) # MAX_LIMIT - KYC_LIMIT - LOGIN_LIMIT
     else
       scope
     end
+  end
+
+  def apply_trading_account_login_filter(scope = @scope)
+    return scope unless @params[:trading_account_login]
+    scope.by_trading_account(@params[:trading_account_login])
   end
 
   def apply_phase_filter(scope = @scope)

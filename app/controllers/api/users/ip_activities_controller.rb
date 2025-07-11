@@ -26,11 +26,15 @@ module Api
       end
 
       def filtered_ip_activities
+        # Start with the base scope
+        scope = IpActivity.for_user(@user)
+        
+        # Apply type-specific limit if filtering by type
         if params[:activity_type].present?
-          scope = IpActivity.for_user(@user)
-                            .by_type(params[:activity_type])
-                            .limit(activity_limit_for(params[:activity_type]))
+          scope = scope.by_type(params[:activity_type])
+                       .limit(activity_limit_for(params[:activity_type]))
         else
+          # For all activities, use the latest_limited_activities scope
           scope = IpActivity.latest_limited_activities(
             @user,
             kyc_limit: KYC_LIMIT,
@@ -39,23 +43,8 @@ module Api
           )
         end
 
-        if params[:from_date] || params[:to_date]
-          scope = scope.with_date_range(params[:from_date], params[:to_date])
-        end
-
-        if params[:phase].present?
-          scope = scope.joins(:trading_account)
-                       .where(trading_accounts: { phase: params[:phase] })
-        end
-
-        if params[:platform].present?
-          scope = scope.joins(:trading_account)
-                       .where(trading_accounts: { platform: params[:platform] })
-        end
-
-        if params[:trading_account_login].present?
-          scope = scope.by_trading_account(params[:trading_account_login])
-        end
+        # Apply all filters using the filter service
+        scope = IpActivityFilterService.apply_filters(scope, params)
 
         # Final ordering
         scope.order(DEFAULT_ORDER_FIELD => DEFAULT_ORDER_DIRECTION)
