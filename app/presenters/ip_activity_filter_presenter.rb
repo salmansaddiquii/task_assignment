@@ -3,15 +3,18 @@
 class IpActivityFilterPresenter
   def initialize(user)
     @user = user
+    @base_scope = IpActivity.for_user(user)
   end
 
   def as_json
     {
-      ip_activities_count: IpActivityService.activity_count(@user),
-      trading_account_logins: IpActivityService.distinct_trading_account_logins(@user),
-      activity_types: IpActivity.activity_types.keys,
-      phases: TradingAccount.phases.keys,
-      platforms: TradingAccount.platforms.keys
+      filters: IpActivityFilterMetadataService.call(@user),
+      stats: {
+        total_activities: @base_scope.count,
+        kyc_activities: @base_scope.by_type(:kyc).count,
+        login_activities: @base_scope.by_type(:login).count,
+        trade_activities: @base_scope.by_type(:trade).count
+      }
     }
   end
 end

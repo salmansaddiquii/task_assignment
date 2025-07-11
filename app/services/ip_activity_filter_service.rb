@@ -23,24 +23,22 @@ class IpActivityFilterService
 
   def apply_date_filter(scope = @scope)
     return scope unless @params[:from_date] || @params[:to_date]
-
-    from_date = @params[:from_date] ? Date.parse(@params[:from_date]) : nil
-    to_date = @params[:to_date] ? Date.parse(@params[:to_date]) : nil
-
-    if from_date && to_date
-      scope.between_dates(from_date, to_date)
-    elsif from_date
-      scope.where("created_at >= ?", from_date.beginning_of_day)
-    elsif to_date
-      scope.where("created_at <= ?", to_date.end_of_day)
-    else
-      scope
-    end
+    scope.with_date_range(@params[:from_date], @params[:to_date])
   end
 
   def apply_activity_type_filter(scope = @scope)
     return scope unless @params[:activity_type]
-    scope.by_type(@params[:activity_type])
+    
+    case @params[:activity_type]
+    when 'kyc'
+      scope.by_type('kyc').limit(10)
+    when 'login'
+      scope.by_type('login').limit(1000)
+    when 'trade'
+      scope.by_type('trade')
+    else
+      scope
+    end
   end
 
   def apply_phase_filter(scope = @scope)
@@ -51,16 +49,12 @@ class IpActivityFilterService
 
   def apply_platform_filter(scope = @scope)
     return scope unless @params[:platform]
-    platforms = Array(@params[:platform])
-    platforms = platforms.first.split(",") if platforms.size == 1
     scope.joins(:trading_account)
-         .where(trading_accounts: { platform: platforms })
+         .where(trading_accounts: { platform: @params[:platform] })
   end
 
   def apply_trading_account_login_filter(scope = @scope)
     return scope unless @params[:trading_account_login]
-    logins = Array(@params[:trading_account_login])
-    logins = logins.first.split(",") if logins.size == 1
-    scope.where(trading_account_login: logins)
+    scope.by_trading_account_login(@params[:trading_account_login])
   end
 end
