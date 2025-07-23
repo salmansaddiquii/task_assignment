@@ -22,7 +22,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_10_170549) do
     t.integer "activity_type", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["activity_type", "created_at"], name: "idx_ip_activities_type_created_at", order: { created_at: :desc }
     t.index ["activity_type", "trading_account_login", "created_at"], name: "idx_ip_activities_type_login_created_at", order: { created_at: :desc }
     t.index ["activity_type", "user_id", "created_at"], name: "idx_ip_activities_type_user_created_at", order: { created_at: :desc }
     t.index ["trading_account_login", "created_at"], name: "idx_ip_activities_login_created_at", order: { created_at: :desc }
@@ -39,6 +38,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_10_170549) do
     t.boolean "is_vpn", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "saved_filters", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "filterable_type", null: false
+    t.jsonb "parameters", default: {}, null: false
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "filterable_type"], name: "index_saved_filters_on_user_id_and_filterable_type"
+    t.index ["user_id"], name: "index_saved_filters_on_user_id"
   end
 
   create_table "trading_accounts", force: :cascade do |t|
@@ -67,5 +77,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_10_170549) do
   add_foreign_key "ip_activities", "trading_accounts", column: "trading_account_login", primary_key: "login"
   add_foreign_key "ip_activities", "users"
   add_foreign_key "ip_activities", "users", column: "owning_user_id"
+  add_foreign_key "saved_filters", "users"
   add_foreign_key "trading_accounts", "users"
 end

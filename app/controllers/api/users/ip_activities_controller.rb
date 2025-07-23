@@ -16,7 +16,7 @@ module Api
       end
 
       def filter_metadata
-        render json: IpActivityFilterPresenter.new(@user).as_json
+        render json: IpActivityFilterMetadataService.call(@user), serializer: IpActivityFilterMetadataSerializer
       end
 
       private
@@ -26,28 +26,34 @@ module Api
       end
 
       def filtered_ip_activities
-        # Start with the base scope
-        scope = IpActivity.for_user(@user)
-        
-        # Apply type-specific limit if filtering by type
-        if params[:activity_type].present?
-          scope = scope.by_type(params[:activity_type])
-                       .limit(activity_limit_for(params[:activity_type]))
-        else
-          # For all activities, use the latest_limited_activities scope
-          scope = IpActivity.latest_limited_activities(
-            @user,
-            kyc_limit: KYC_LIMIT,
-            login_limit: LOGIN_LIMIT,
-            trade_limit: MAX_LIMIT - KYC_LIMIT - LOGIN_LIMIT
-          )
+        filter_params = params[:filters] || {}
+        if params[:saved_filter_id]
+          saved_filter = SavedFilter.find(params[:saved_filter_id])
+          filter_params = saved_filter.symbolized_parameters
         end
+        activities = IpActivity.apply_filters(filter_params)
+        activities = activities.order(DEFAULT_ORDER_FIELD => DEFAULT_ORDER_DIRECTION)
+        if filter_params[:activity_type].present?
+          activities = activities.limit(activity_limit_for(filter_params[:activity_type]))
+        else
+          activities = activities.limit(MAX_LIMIT)
+        end
+        activities
+      end
 
-        # Apply all filters using the filter service
-        scope = IpActivityFilterService.apply_filters(scope, params)
+      def save_filter
+        SavedFilter.create!(
+          user: current_user,
+          filterable_type: "IpActivity",
+          parameters: params[:filters],
+          name: params[:name]
+        )
+        head :created
+      end
 
-        # Final ordering
-        scope.order(DEFAULT_ORDER_FIELD => DEFAULT_ORDER_DIRECTION)
+      def load_filter
+        filter = SavedFilter.find(params[:id])
+        render json: filter
       end
 
       def activity_limit_for(type)

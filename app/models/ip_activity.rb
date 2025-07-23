@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class IpActivity < ApplicationRecord
+  include Filterable
   enum :activity_type, { trade: 0, login: 1, kyc: 2 }
 
   validates :activity_type, :ip_address, presence: true
@@ -22,6 +23,16 @@ class IpActivity < ApplicationRecord
   belongs_to :owning_user, class_name: "User", optional: true
 
   # ========= SCOPES =========
+
+  scope :filter_by_activity_type, ->(type) { where(activity_type: type) }
+  scope :filter_by_trading_account_login, ->(login) { where(trading_account_login: login) }
+  scope :filter_by_date_range, ->(range) {
+    if range.is_a?(Hash) && range[:from] && range[:to]
+      where(created_at: range[:from]..range[:to])
+    else
+      all
+    end
+  }
 
   scope :for_user, lambda { |user|
     where(user:).includes(:user, :trading_account, :ip_address_record)
